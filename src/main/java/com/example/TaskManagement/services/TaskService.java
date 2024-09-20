@@ -32,8 +32,9 @@ public class TaskService {
 
     public TaskDTO getById(Long id){
         log.info("Get by task id " + id);
-        Optional<Task> opt = taskRepository.findById(id);
-        return opt.map(this::toDto).orElse(null);
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new TaskNotFoundException(id));
+        return toDto(task);
     }
     public Page<TaskDTO> getAllTasksAuthor(String username,int page, int size) {
         log.info("Get all task author");
@@ -82,18 +83,14 @@ public class TaskService {
     }
 
     public void patchEntityTask(Long id,TaskDTO taskDto){
-        Optional<Task> opt = taskRepository.findById(id);
-        if (opt.isEmpty()) {
-            System.out.println(" not founder task");
-        } else {
-            Task task = opt.get();
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new TaskNotFoundException(id));
             patchEntityTask(taskDto,task);
-        }
     }
 
     public void updateExecutor(Long taskId,String executorName){
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new UsernameNotFoundException("not founder task")); //переделать ошибку!
+                .orElseThrow(() -> new TaskNotFoundException(taskId));
         User user = userRepository.findByUsername(executorName)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
         task.setAuthor(user);
@@ -108,7 +105,7 @@ public class TaskService {
     public TaskDTO toDto(Task task) {
         TaskDTO taskDto = modelMapper.map(task, TaskDTO.class);
         if (taskDto.getExecutorName() == null){
-            taskDto.setExecutorName("The performer is not identified");
+            taskDto.setExecutorName("The executor is not identified");
         }
         return taskDto;
     }

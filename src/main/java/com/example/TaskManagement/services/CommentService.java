@@ -30,9 +30,9 @@ public class CommentService {
     private final ModelMapper modelMapper;
 
     public CommentDTO getById(Long id){
-        log.info("Get comment by id " + id);
-        Optional<Comment> opt = commentRepository.findById(id);
-        return opt.map(this::toDto).orElse(null);
+        Comment comment = commentRepository.findById(id)
+                .orElseThrow(() -> new CommentNotFoundException(id));
+        return toDto(comment);
     }
 
 //    public Collection<CommentDTO> getAll() {

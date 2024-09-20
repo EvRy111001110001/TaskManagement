@@ -29,11 +29,7 @@ public class TaskController {
     public ResponseEntity<TaskDTO> getTaskById(@PathVariable Long taskId) {
         log.info("Fetching task with id {}", taskId);
         TaskDTO taskDto = taskService.getById(taskId);
-        if (taskDto != null) {
-            return ResponseEntity.ok(taskDto);
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        return ResponseEntity.ok(taskDto);
     }
 
     @Operation(summary = "getting all tasks of the author")
@@ -67,7 +63,7 @@ public class TaskController {
             @RequestBody TaskDTO taskDto
     ) {
 
-        log.info("Creating task" );//for author {}", authorName
+        log.info("Creating task" );
         taskService.create(taskDto, userId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -76,7 +72,7 @@ public class TaskController {
     @PreAuthorize("@taskSecurityService.isAuthor(#taskId, principal.username)")
     @PutMapping("/{taskId}")
     public ResponseEntity<Void> updateTask(@PathVariable Long taskId, @RequestBody TaskDTO taskDto) {
-        log.info("Updating task");//with id {}", id
+        log.info("Updating task");
         taskService.patchEntityTask(taskId,taskDto);
         return ResponseEntity.ok().build();
     }

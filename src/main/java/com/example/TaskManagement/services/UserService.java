@@ -20,11 +20,11 @@ public class UserService {
 
     public void create(User user) {
         if (userRepository.existsByUsername(user.getUsername())) {
-            throw new RuntimeException("A user with this name already exists");
+            throw new DuplicateException("A user with this name already exists");
         }
 
         if (userRepository.existsByEmail(user.getEmail())) {
-            throw new RuntimeException("A user with this email already exists");
+            throw new DuplicateException("A user with this email already exists");
         }
         setUser(user);
         save(user);
