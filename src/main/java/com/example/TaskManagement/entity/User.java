@@ -3,11 +3,10 @@ package com.example.TaskManagement.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.List;
+import java.util.Collections;
 import java.util.Set;
 
 @Entity
@@ -33,22 +32,22 @@ public class User implements UserDetails {
     @Column(name = "password")
     private String password;
 
-    @OneToMany(mappedBy = "author")
-    private Set<Task> authoredTasks;
-
-    @OneToMany(mappedBy = "executor")
-    private Set<Task> executedTasks;
+//    @OneToMany(mappedBy = "author")
+//    private Set<Task> authoredTasks;
+//
+//    @OneToMany(mappedBy = "executor")
+//    private Set<Task> executedTasks;
 
     @OneToMany(mappedBy = "author")
     private Set<Comment> comments;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false)
-    private Role role;
+//    @Enumerated(EnumType.STRING)
+//    @Column(name = "role", nullable = false)
+//    private Role role;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role.name()));
+        return Collections.emptyList();
     }
 
     @Override

@@ -26,7 +26,7 @@ public class UserService {
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new DuplicateException("A user with this email already exists");
         }
-        setUser(user);
+        //setUser(user);
         save(user);
     }
 
@@ -46,15 +46,15 @@ public class UserService {
         return getByUsername(username);
     }
 
-    public void setAuthor(User user) {
-        user.setRole(Role.ROLE_AUTHOR);
-    }
-
-    public void setExecutor(User user) {
-        user.setRole(Role.ROLE_EXECUTOR);
-    }
-
-    public void setUser(User user) {
-        user.setRole(Role.ROLE_USER);
-    }
+//    public void setAuthor(User user) {
+//        user.setRole(Role.ROLE_AUTHOR);
+//    }
+//
+//    public void setExecutor(User user) {
+//        user.setRole(Role.ROLE_EXECUTOR);
+//    }
+//
+//    public void setUser(User user) {
+//        user.setRole(Role.ROLE_USER);
+//    }
 }

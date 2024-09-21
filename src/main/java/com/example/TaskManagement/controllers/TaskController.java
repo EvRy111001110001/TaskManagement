@@ -24,7 +24,7 @@ public class TaskController {
     private final TaskService taskService;
 
     @Operation(summary = "getting task by ID")
-    @PreAuthorize("@taskSecurityService.isAuthor(#taskId, principal.username)")
+    @PreAuthorize("@taskSecurityService.hasRoleInTask(#taskId, 'ROLE_AUTHOR', authentication.name)")
     @GetMapping("/{taskId}")
     public ResponseEntity<TaskDTO> getTaskById(@PathVariable Long taskId) {
         log.info("Fetching task with id {}", taskId);
@@ -68,8 +68,8 @@ public class TaskController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @Operation(summary = "modify task by ID")
-    @PreAuthorize("@taskSecurityService.isAuthor(#taskId, principal.username)")
+    @Operation(summary = "update task by ID")
+    @PreAuthorize("@taskSecurityService.hasRoleInTask(#taskId, 'ROLE_AUTHOR', authentication.name)")
     @PutMapping("/{taskId}")
     public ResponseEntity<Void> updateTask(@PathVariable Long taskId, @RequestBody TaskDTO taskDto) {
         log.info("Updating task");
@@ -87,7 +87,7 @@ public class TaskController {
     }
 
     @Operation(summary = "update task status - completed")
-    @PreAuthorize("@taskSecurityService.isAuthor(#taskId, principal.username) or @taskSecurityService.isExecutor(#taskId, principal.username)")
+    @PreAuthorize("@taskSecurityService.hasRoleInTask(#taskId, 'ROLE_EXECUTOR', authentication.name)")
     @PatchMapping("/{taskId}/status/completed")
     public ResponseEntity<Void> updateStatusCompleted(@PathVariable Long taskId,@RequestParam String status) {
         log.info("Updating task status to COMPLETED for task with id {}", taskId);
@@ -99,7 +99,7 @@ public class TaskController {
     }
 
     @Operation(summary = "update task status - in progress")
-    @PreAuthorize("@taskSecurityService.isAuthor(#taskId, principal.username) or @taskSecurityService.isExecutor(#taskId, principal.username)")
+    @PreAuthorize("@taskSecurityService.hasRoleInTask(#taskId, 'ROLE_EXECUTOR', authentication.name)")
     @PatchMapping("/{taskId}/status/in-process")
     public ResponseEntity<Void> updateStatusInProcess(@PathVariable Long taskId,@RequestParam String status) {
         log.info("Updating task status to IN_PROCESS for task with id {}", taskId);
@@ -111,7 +111,7 @@ public class TaskController {
     }
 
     @Operation(summary = "update task priority - low")
-    @PreAuthorize("@taskSecurityService.isAuthor(#taskId, principal.username)")
+    @PreAuthorize("@taskSecurityService.hasRoleInTask(#taskId, 'ROLE_AUTHOR', authentication.name)")
     @PatchMapping("/{taskId}/priority/low")
     public ResponseEntity<Void> updatePriorityMedium(@PathVariable Long taskId,@RequestParam String priority) {
         log.info("Updating task priority to LOW for task with id {}", taskId);
@@ -123,7 +123,7 @@ public class TaskController {
     }
 
     @Operation(summary = "update task priority - high")
-    @PreAuthorize("@taskSecurityService.isAuthor(#taskId, principal.username)")
+    @PreAuthorize("@taskSecurityService.hasRoleInTask(#taskId, 'ROLE_AUTHOR', authentication.name)")
     @PatchMapping("/{taskId}/priority/high")
     public ResponseEntity<Void> updatePriorityHigh(@PathVariable Long taskId,@RequestParam String priority) {
         log.info("Updating task priority to HIGH for task with id {}", taskId);
@@ -135,7 +135,7 @@ public class TaskController {
     }
 
     @Operation(summary = "update task executor")
-    @PreAuthorize("@taskSecurityService.isAuthor(#taskId, principal.username)")
+    @PreAuthorize("@taskSecurityService.hasRoleInTask(#taskId, 'ROLE_AUTHOR', authentication.name)")
     @PatchMapping("/{taskId}/{executorName}")
     public ResponseEntity<Void> updateExecutor(@PathVariable Long taskId, @RequestParam String executorName) {
         log.info("Updating task executor to {} for task with id {}", executorName, taskId);

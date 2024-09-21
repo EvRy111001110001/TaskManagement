@@ -1,14 +1,12 @@
 package com.example.TaskManagement.services;
 
-import com.example.TaskManagement.entity.PriorityTask;
-import com.example.TaskManagement.entity.StatusTask;
-import com.example.TaskManagement.entity.Task;
-import com.example.TaskManagement.entity.User;
+import com.example.TaskManagement.entity.*;
 import com.example.TaskManagement.model.CommentDTO;
 import com.example.TaskManagement.model.TaskDTO;
 import com.example.TaskManagement.repositories.CommentRepository;
 import com.example.TaskManagement.repositories.TaskRepository;
 import com.example.TaskManagement.repositories.UserRepository;
+import com.example.TaskManagement.repositories.UserTaskRoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.Conditions;
@@ -28,6 +26,7 @@ public class TaskService {
     private final CommentRepository commentRepository;
     private TaskRepository taskRepository;
     private UserRepository userRepository;
+    private UserTaskRoleRepository userTaskRoleRepository;
     private final ModelMapper modelMapper;
 
     public TaskDTO getById(Long id){
@@ -57,10 +56,16 @@ public class TaskService {
         log.info("Create task");
         Task task = toEntity(taskDto);
         setDefaultValue(task);
-        User user = userRepository.findUserById(userId)
+        User author = userRepository.findUserById(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-            task.setAuthor(user);
+
         taskRepository.save(task);
+        UserTaskRole userTaskRole = new UserTaskRole();
+        userTaskRole.setUser(author);
+        userTaskRole.setTask(task);
+        userTaskRole.setRole(Role.ROLE_AUTHOR);
+
+        userTaskRoleRepository.save(userTaskRole);
     }
 
     public void update(Task task) {
@@ -91,10 +96,12 @@ public class TaskService {
     public void updateExecutor(Long taskId,String executorName){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
-        User user = userRepository.findByUsername(executorName)
+        User executor = userRepository.findByUsername(executorName)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        task.setAuthor(user);
-        taskRepository.save(task);
+        UserTaskRole userTaskRoleExecutor = new UserTaskRole();
+        userTaskRoleExecutor.setUser(executor);
+        userTaskRoleExecutor.setTask(task);
+        userTaskRoleExecutor.setRole(Role.ROLE_EXECUTOR);
     }
 
 //    public Page<CommentDTO> findAllCommentsWithTask(Long id){
@@ -104,13 +111,28 @@ public class TaskService {
 
     public TaskDTO toDto(Task task) {
         TaskDTO taskDto = modelMapper.map(task, TaskDTO.class);
-        if (taskDto.getExecutorName() == null){
-            taskDto.setExecutorName("The executor is not identified");
+
+        UserTaskRole authorRole = userTaskRoleRepository
+                .findByTaskAndRole(task, Role.ROLE_AUTHOR)
+                .orElseThrow(() -> new UsernameNotFoundException("Author not found for task"));
+
+        taskDto.setAuthorName(authorRole.getUser().getUsername());
+
+        Optional<UserTaskRole> executorRole = userTaskRoleRepository.findByTaskAndRole(task, Role.ROLE_EXECUTOR);
+
+        if (executorRole.isPresent()) {
+            taskDto.setExecutorName(executorRole.get().getUser().getUsername());
+        } else {
+            taskDto.setExecutorName("You have not assigned a task executor");
         }
+
         return taskDto;
     }
 
     public Task toEntity(TaskDTO taskDto) {
+        if (taskDto.getExecutorName() != null && !taskDto.getExecutorName().isEmpty()) {
+            updateExecutor(taskDto.getId(),taskDto.getExecutorName());
+        }
         return modelMapper.map(taskDto, Task.class);
     }
 
