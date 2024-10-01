@@ -1,6 +1,5 @@
 package com.example.TaskManagement.services;
 
-import com.example.TaskManagement.entity.Role;
 import com.example.TaskManagement.entity.User;
 import com.example.TaskManagement.model.JwtAuthenticationResponse;
 import com.example.TaskManagement.model.SignInRequest;
@@ -36,13 +35,14 @@ public class AuthorizationService {
 
     public JwtAuthenticationResponse signIn(SignInRequest request) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                request.getPassword(),
+                request.getUsername(),
                 request.getPassword()
         ));
 
         var user = userService
                 .userDetailsService()
-                .loadUserByUsername(request.getPassword());
+                //.loadUserByUsername(request.getPassword());
+                .loadUserByUsername(request.getUsername());
 
         var jwt = jwtService.generateToken(user);
         return new JwtAuthenticationResponse(jwt);

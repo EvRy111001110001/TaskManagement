@@ -32,18 +32,11 @@ public class User implements UserDetails {
     @Column(name = "password")
     private String password;
 
-//    @OneToMany(mappedBy = "author")
-//    private Set<Task> authoredTasks;
-//
-//    @OneToMany(mappedBy = "executor")
-//    private Set<Task> executedTasks;
-
     @OneToMany(mappedBy = "author")
-    private Set<Comment> comments;
+    private Set<Task> authoredTasks;
 
-//    @Enumerated(EnumType.STRING)
-//    @Column(name = "role", nullable = false)
-//    private Role role;
+    @OneToMany(mappedBy = "executor")
+    private Set<Task> executedTasks;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -70,3 +63,9 @@ public class User implements UserDetails {
         return true;
     }
 }
+//    @OneToMany(mappedBy = "author")
+//    private Set<Comment> comments;
+
+//    @Enumerated(EnumType.STRING)
+//    @Column(name = "role", nullable = false)
+//   private Role role;

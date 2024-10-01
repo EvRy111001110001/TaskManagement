@@ -1,15 +1,14 @@
 package com.example.TaskManagement.services;
 
 import com.example.TaskManagement.entity.*;
-import com.example.TaskManagement.model.CommentDTO;
-import com.example.TaskManagement.model.TaskDTO;
+import com.example.TaskManagement.model.TaskRequestDTO;
+import com.example.TaskManagement.model.TaskResponseDTO;
 import com.example.TaskManagement.repositories.CommentRepository;
 import com.example.TaskManagement.repositories.TaskRepository;
 import com.example.TaskManagement.repositories.UserRepository;
-import com.example.TaskManagement.repositories.UserTaskRoleRepository;
+import com.example.TaskManagement.repositories.RedisTaskRoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.Conditions;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -24,52 +23,49 @@ import java.util.Optional;
 @Service
 public class TaskService {
     private final CommentRepository commentRepository;
-    private TaskRepository taskRepository;
-    private UserRepository userRepository;
-    private UserTaskRoleRepository userTaskRoleRepository;
+    private final TaskRepository taskRepository;
+    private final UserRepository userRepository;
     private final ModelMapper modelMapper;
+    private final RedisTaskRoleRepository redisTaskRoleRepository;
 
-    public TaskDTO getById(Long id){
+    public TaskResponseDTO getById(Long id){
         log.info("Get by task id " + id);
-        Task task = taskRepository.findById(id)
+         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new TaskNotFoundException(id));
         return toDto(task);
     }
-    public Page<TaskDTO> getAllTasksAuthor(String username,int page, int size) {
-        log.info("Get all task author");
-        Pageable pageable = PageRequest.of(page, size);
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        return taskRepository.findAllWithAuthor(user.getId(),pageable)
-                .map(this::toDto);
-    }
-    public Page<TaskDTO> getAllTasksExecutor(String username,int page, int size) {
-        log.info("Get all task executor");
-        Pageable pageable = PageRequest.of(page, size);
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        return taskRepository.findAllWithExecutor(user.getId(),pageable)
-                .map(this::toDto);
 
-    }
-    public void create(TaskDTO taskDto, Long userId) {
+    public void create(TaskRequestDTO taskRequestDto) {
         log.info("Create task");
-        Task task = toEntity(taskDto);
-        setDefaultValue(task);
-        User author = userRepository.findUserById(userId)
+        User author = userRepository.findByUsername(taskRequestDto.getAuthorName())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        Task task = toEntity(taskRequestDto);
+        task.setAuthor(author); //явное указание автора
+        setDefaultValue(task);
 
-        taskRepository.save(task);
-        UserTaskRole userTaskRole = new UserTaskRole();
-        userTaskRole.setUser(author);
-        userTaskRole.setTask(task);
-        userTaskRole.setRole(Role.ROLE_AUTHOR);
+        Task savedTask = taskRepository.save(task);
 
-        userTaskRoleRepository.save(userTaskRole);
+        Long executorId = null;
+        if (taskRequestDto.getExecutorName() != null) {
+            executorId = userRepository.findByUsername(taskRequestDto.getExecutorName())
+                    .map(User::getId)
+                    .orElse(null);
+        }
+
+        redisTaskRoleRepository.addTask(savedTask.getId(), author.getId(), executorId);
     }
 
-    public void update(Task task) {
+    public void update(TaskRequestDTO taskRequestDTO,Long taskId) {
         log.info("Update task");
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new TaskNotFoundException(taskId));
+//        task.setText(taskRequestDTO.getText());
+//        task.setTitle(taskRequestDTO.getTitle());
+//        if (taskRequestDTO.getExecutorName() != null && !taskRequestDTO.getExecutorName().isEmpty()) {
+//            updateExecutor(taskRequestDTO.getId(), taskRequestDTO.getExecutorName());
+//        }
+        toEntity(taskRequestDTO);
+
         taskRepository.save(task);
     }
 
@@ -87,10 +83,32 @@ public class TaskService {
         }
     }
 
-    public void patchEntityTask(Long id,TaskDTO taskDto){
+    public void patchStatusTaskInProgress(Long id){
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new TaskNotFoundException(id));
-            patchEntityTask(taskDto,task);
+            task.setStatus(StatusTask.IN_PROCESS);
+            taskRepository.save(task);
+    }
+
+    public void patchStatusTaskCompleted(Long id){
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new TaskNotFoundException(id));
+        task.setStatus(StatusTask.COMPLETED);
+        taskRepository.save(task);
+    }
+
+    public void patchPriorityTaskLow(Long id){
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new TaskNotFoundException(id));
+        task.setPriority(PriorityTask.LOW);
+        taskRepository.save(task);
+    }
+
+    public void patchPriorityTaskHigh(Long id){
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new TaskNotFoundException(id));
+        task.setPriority(PriorityTask.HIGH);
+        taskRepository.save(task);
     }
 
     public void updateExecutor(Long taskId,String executorName){
@@ -98,46 +116,56 @@ public class TaskService {
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
         User executor = userRepository.findByUsername(executorName)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        UserTaskRole userTaskRoleExecutor = new UserTaskRole();
-        userTaskRoleExecutor.setUser(executor);
-        userTaskRoleExecutor.setTask(task);
-        userTaskRoleExecutor.setRole(Role.ROLE_EXECUTOR);
+        task.setExecutor(executor);
+        redisTaskRoleRepository.updateExecutor(taskId, executor.getId());
     }
 
-//    public Page<CommentDTO> findAllCommentsWithTask(Long id){
-//        return taskRepository.findAllCommentsWithTask(id)
-//                .map(this::toDto);
-//    }
+    public TaskResponseDTO toDto(Task task) {
+        TaskResponseDTO taskResponseDto = modelMapper.map(task, TaskResponseDTO.class);
 
-    public TaskDTO toDto(Task task) {
-        TaskDTO taskDto = modelMapper.map(task, TaskDTO.class);
-
-        UserTaskRole authorRole = userTaskRoleRepository
-                .findByTaskAndRole(task, Role.ROLE_AUTHOR)
-                .orElseThrow(() -> new UsernameNotFoundException("Author not found for task"));
-
-        taskDto.setAuthorName(authorRole.getUser().getUsername());
-
-        Optional<UserTaskRole> executorRole = userTaskRoleRepository.findByTaskAndRole(task, Role.ROLE_EXECUTOR);
-
-        if (executorRole.isPresent()) {
-            taskDto.setExecutorName(executorRole.get().getUser().getUsername());
+        if (task.getAuthor() != null) {
+            String authorName = task.getAuthor().getUsername();
+            taskResponseDto.setAuthorName(authorName);
         } else {
-            taskDto.setExecutorName("You have not assigned a task executor");
+            taskResponseDto.setAuthorName("Unknown Author");
         }
 
-        return taskDto;
-    }
-
-    public Task toEntity(TaskDTO taskDto) {
-        if (taskDto.getExecutorName() != null && !taskDto.getExecutorName().isEmpty()) {
-            updateExecutor(taskDto.getId(),taskDto.getExecutorName());
+        if (task.getExecutor() != null) {
+            Optional<User> executor = userRepository.findUserById(task.getExecutor().getId());
+            if (executor.isPresent()) {
+                taskResponseDto.setExecutorName(task.getExecutor().getUsername());
+            } else {
+                taskResponseDto.setExecutorName("Executor not found");
+            }
+        } else {
+            taskResponseDto.setExecutorName("You have not assigned a task executor");
         }
-        return modelMapper.map(taskDto, Task.class);
+        return taskResponseDto;
     }
 
-    public void patchEntityTask(TaskDTO taskDto, Task task) {
-        modelMapper.getConfiguration().setPropertyCondition(Conditions.isNotNull());
-        modelMapper.map(taskDto, task);
+    public Task toEntity(TaskRequestDTO taskRequestDto) {
+//        if (taskRequestDto.getExecutorName() != null && !taskRequestDto.getExecutorName().isEmpty()) {
+//            updateExecutor(taskRequestDto.getId(), taskRequestDto.getExecutorName());
+//        }
+        return modelMapper.map(taskRequestDto, Task.class);
+    }
+
+    public Page<TaskResponseDTO> getAllTasksAuthor(String username, int page, int size) {
+        log.info("Get all task author");
+        Pageable pageable = PageRequest.of(page, size);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        return taskRepository.findAllWithAuthor(user.getId(),pageable)
+                .map(this::toDto);
+    }
+
+    public Page<TaskResponseDTO> getAllTasksExecutor(String username,int page, int size) {
+        log.info("Get all task executor");
+        Pageable pageable = PageRequest.of(page, size);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        return taskRepository.findAllWithExecutor(user.getId(),pageable)
+                .map(this::toDto);
+
     }
 }

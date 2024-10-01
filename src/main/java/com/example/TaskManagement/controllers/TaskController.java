@@ -1,6 +1,7 @@
 package com.example.TaskManagement.controllers;
 
-import com.example.TaskManagement.model.TaskDTO;
+import com.example.TaskManagement.model.TaskRequestDTO;
+import com.example.TaskManagement.model.TaskResponseDTO;
 import com.example.TaskManagement.services.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -12,10 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-
-
 @RestController
-@RequestMapping("/api/users/{userId}/tasks")
+@RequestMapping("/api")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Task Management")
@@ -24,62 +23,59 @@ public class TaskController {
     private final TaskService taskService;
 
     @Operation(summary = "getting task by ID")
-    @PreAuthorize("@taskSecurityService.hasRoleInTask(#taskId, 'ROLE_AUTHOR', authentication.name)")
-    @GetMapping("/{taskId}")
-    public ResponseEntity<TaskDTO> getTaskById(@PathVariable Long taskId) {
+    @PreAuthorize("@taskSecurityService.checkAuthorRole(#taskId, authentication.name)")
+    @GetMapping("/tasks/{taskId}")
+    public ResponseEntity<TaskResponseDTO> getTaskById(@PathVariable Long taskId) {
         log.info("Fetching task with id {}", taskId);
-        TaskDTO taskDto = taskService.getById(taskId);
-        return ResponseEntity.ok(taskDto);
+        TaskResponseDTO taskResponseDTO = taskService.getById(taskId);
+        return ResponseEntity.ok(taskResponseDTO);
     }
 
     @Operation(summary = "getting all tasks of the author")
-    @GetMapping("/{author}")
-    public ResponseEntity<Page<TaskDTO>> getAllTasksAuthor(
+    @GetMapping("/users/{author}/allTasksOfAuthor")
+    public ResponseEntity<Page<TaskResponseDTO>> getAllTasksAuthor(
             @PathVariable String author,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
         log.info("Fetching tasks for author: " + author + ", page: " + page + ", size: " + size);
-        Page<TaskDTO> tasksPage = taskService.getAllTasksAuthor(author, page, size);
+        Page<TaskResponseDTO> tasksPage = taskService.getAllTasksAuthor(author, page, size);
         return ResponseEntity.ok(tasksPage);
     }
 
     @Operation(summary = "getting all tasks of the executor")
-    @GetMapping("/{executor}")
-    public ResponseEntity<Page<TaskDTO>> getAllTasksExecutor(
+    @GetMapping("/users/{executor}/allTasksOfExecutor")
+    public ResponseEntity<Page<TaskResponseDTO>> getAllTasksExecutor(
             @PathVariable String executor,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
         log.info("Fetching tasks for author: " + executor + ", page: " + page + ", size: " + size);
-        Page<TaskDTO> tasksPage = taskService.getAllTasksExecutor(executor, page, size);
+        Page<TaskResponseDTO> tasksPage = taskService.getAllTasksExecutor(executor, page, size);
         return ResponseEntity.ok(tasksPage);
     }
 
     @Operation(summary = "create new task")
-    @PostMapping()
-    public ResponseEntity<Void> createTask(
-            @PathVariable Long userId,
-            @RequestBody TaskDTO taskDto
-    ) {
-
+    @PostMapping("/tasks")
+    public ResponseEntity<Void> createTask(@RequestBody TaskRequestDTO taskRequestDto) {
         log.info("Creating task" );
-        taskService.create(taskDto, userId);
+        taskService.create(taskRequestDto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @Operation(summary = "update task by ID")
-    @PreAuthorize("@taskSecurityService.hasRoleInTask(#taskId, 'ROLE_AUTHOR', authentication.name)")
-    @PutMapping("/{taskId}")
-    public ResponseEntity<Void> updateTask(@PathVariable Long taskId, @RequestBody TaskDTO taskDto) {
+    @PreAuthorize("@taskSecurityService.checkAuthorRole(#taskId, authentication.name)")
+    @PutMapping("/tasks/{taskId}")
+    public ResponseEntity<Void> updateTask(@PathVariable Long taskId,@RequestBody TaskRequestDTO taskRequestDto) {
         log.info("Updating task");
-        taskService.patchEntityTask(taskId,taskDto);
+//        taskRequestDto.setId(taskId);
+        taskService.update(taskRequestDto,taskId);
         return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "delete task by ID")
-    @PreAuthorize("@taskSecurityService.isAuthor(#taskId, principal.username)")
-    @DeleteMapping("/{taskId}")
+    @PreAuthorize("@taskSecurityService.checkAuthorRole(#taskId, authentication.name)")
+    @DeleteMapping("/tasks/{taskId}")
     public ResponseEntity<Void> deleteTask(@PathVariable Long taskId) {
         log.info("Deleting task with id {}", taskId);
         taskService.deleteById(taskId);
@@ -87,59 +83,49 @@ public class TaskController {
     }
 
     @Operation(summary = "update task status - completed")
-    @PreAuthorize("@taskSecurityService.hasRoleInTask(#taskId, 'ROLE_EXECUTOR', authentication.name)")
-    @PatchMapping("/{taskId}/status/completed")
-    public ResponseEntity<Void> updateStatusCompleted(@PathVariable Long taskId,@RequestParam String status) {
+    @PreAuthorize("@taskSecurityService.checkExecutorRole(#taskId, authentication.name) " +
+            "|| @taskSecurityService.checkAuthorRole(#taskId, authentication.name)")
+    @PatchMapping("/tasks/{taskId}/status/completed")
+    public ResponseEntity<Void> updateStatusCompleted(@PathVariable Long taskId) {
         log.info("Updating task status to COMPLETED for task with id {}", taskId);
-        TaskDTO taskDto = new TaskDTO();
-        taskDto.setId(taskId);
-        taskDto.setStatus(status);
-        taskService.patchEntityTask(taskId,taskDto);
+       taskService.patchStatusTaskCompleted(taskId);
         return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "update task status - in progress")
-    @PreAuthorize("@taskSecurityService.hasRoleInTask(#taskId, 'ROLE_EXECUTOR', authentication.name)")
-    @PatchMapping("/{taskId}/status/in-process")
-    public ResponseEntity<Void> updateStatusInProcess(@PathVariable Long taskId,@RequestParam String status) {
+    @PreAuthorize("@taskSecurityService.checkExecutorRole(#taskId, authentication.name) " +
+            "|| @taskSecurityService.checkAuthorRole(#taskId, authentication.name)")
+    @PatchMapping("/tasks/{taskId}/status/in-process")
+    public ResponseEntity<Void> updateStatusInProcess(@PathVariable Long taskId) {
         log.info("Updating task status to IN_PROCESS for task with id {}", taskId);
-        TaskDTO taskDto = new TaskDTO();
-        taskDto.setId(taskId);
-        taskDto.setStatus(status);
-        taskService.patchEntityTask(taskId,taskDto);
+       taskService.patchStatusTaskInProgress(taskId);
         return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "update task priority - low")
-    @PreAuthorize("@taskSecurityService.hasRoleInTask(#taskId, 'ROLE_AUTHOR', authentication.name)")
-    @PatchMapping("/{taskId}/priority/low")
-    public ResponseEntity<Void> updatePriorityMedium(@PathVariable Long taskId,@RequestParam String priority) {
+    @PreAuthorize("@taskSecurityService.checkAuthorRole(#taskId, authentication.name)")
+    @PatchMapping("/tasks/{taskId}/priority/low")
+    public ResponseEntity<Void> updatePriorityMedium(@PathVariable Long taskId) {
         log.info("Updating task priority to LOW for task with id {}", taskId);
-        TaskDTO taskDto = new TaskDTO();
-        taskDto.setId(taskId);
-        taskDto.setPriority(priority);
-        taskService.patchEntityTask(taskId,taskDto);
+       taskService.patchPriorityTaskLow(taskId);
         return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "update task priority - high")
-    @PreAuthorize("@taskSecurityService.hasRoleInTask(#taskId, 'ROLE_AUTHOR', authentication.name)")
-    @PatchMapping("/{taskId}/priority/high")
-    public ResponseEntity<Void> updatePriorityHigh(@PathVariable Long taskId,@RequestParam String priority) {
+    @PreAuthorize("@taskSecurityService.checkAuthorRole(#taskId, authentication.name)")
+    @PatchMapping("/tasks/{taskId}/priority/high")
+    public ResponseEntity<Void> updatePriorityHigh(@PathVariable Long taskId) {
         log.info("Updating task priority to HIGH for task with id {}", taskId);
-        TaskDTO taskDto = new TaskDTO();
-        taskDto.setId(taskId);
-        taskDto.setPriority(priority);
-        taskService.patchEntityTask(taskId,taskDto);;
+        taskService.patchPriorityTaskHigh(taskId);
         return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "update task executor")
-    @PreAuthorize("@taskSecurityService.hasRoleInTask(#taskId, 'ROLE_AUTHOR', authentication.name)")
-    @PatchMapping("/{taskId}/{executorName}")
-    public ResponseEntity<Void> updateExecutor(@PathVariable Long taskId, @RequestParam String executorName) {
+    @PreAuthorize("@taskSecurityService.checkAuthorRole(#taskId, authentication.name)")
+    @PatchMapping("/tasks/{taskId}/{executorName}")
+    public ResponseEntity<Void> updateExecutor(@PathVariable Long taskId, @PathVariable String executorName) {
         log.info("Updating task executor to {} for task with id {}", executorName, taskId);
-        //taskService.patchEntityTask(taskId, executorName);
+        taskService.updateExecutor(taskId, executorName);
         return ResponseEntity.ok().build();
     }
 }
