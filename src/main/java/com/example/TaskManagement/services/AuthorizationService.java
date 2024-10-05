@@ -24,7 +24,6 @@ public class AuthorizationService {
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                //.role(Role.ROLE_USER)
                 .build();
 
         userService.create(user);
@@ -35,14 +34,13 @@ public class AuthorizationService {
 
     public JwtAuthenticationResponse signIn(SignInRequest request) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                request.getUsername(),
+                request.getEmail(),
                 request.getPassword()
         ));
 
         var user = userService
                 .userDetailsService()
-                //.loadUserByUsername(request.getPassword());
-                .loadUserByUsername(request.getUsername());
+                .loadUserByUsername(request.getEmail());
 
         var jwt = jwtService.generateToken(user);
         return new JwtAuthenticationResponse(jwt);

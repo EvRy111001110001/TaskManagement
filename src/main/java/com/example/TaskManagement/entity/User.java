@@ -63,9 +63,3 @@ public class User implements UserDetails {
         return true;
     }
 }
-//    @OneToMany(mappedBy = "author")
-//    private Set<Comment> comments;
-
-//    @Enumerated(EnumType.STRING)
-//    @Column(name = "role", nullable = false)
-//   private Role role;

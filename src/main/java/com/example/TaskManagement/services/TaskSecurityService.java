@@ -18,21 +18,8 @@ public class TaskSecurityService {
     @Autowired
     private UserRepository userRepository;
 
-//    public void addTask(Long taskId, Long authorId, Long executorId) {
-//        RedisTask task = new RedisTask(taskId, authorId, executorId);
-//        redisTaskRoleRepository.save(task);
-//    }
-//    public void updateExecutor(Long taskId, Long newExecutorId) {
-//        Optional<RedisTask> optionalTask = redisTaskRoleRepository.findById(taskId);
-//        if (optionalTask.isPresent()) {
-//            RedisTask redisTask = optionalTask.get();
-//            redisTask.setExecutorId(newExecutorId);
-//            redisTaskRoleRepository.save(redisTask);
-//        }
-//    }
-
-    public boolean checkAuthorRole(Long taskId, String authorName) {
-        User user = userRepository.findByUsername(authorName)
+    public boolean checkAuthorRole(Long taskId, String authorEmail) {
+        User user = userRepository.findByEmail(authorEmail)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
         Long userId = user.getId();
         Optional<RedisTask> optionalTask = redisTaskRoleRepository.findById(taskId);
@@ -43,8 +30,8 @@ public class TaskSecurityService {
         return false;
     }
 
-    public boolean checkExecutorRole(Long taskId, String executorName) {
-        User user = userRepository.findByUsername(executorName)
+    public boolean checkExecutorRole(Long taskId, String executorEmail) {
+        User user = userRepository.findByEmail(executorEmail)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
         Long userId = user.getId();
 
@@ -56,14 +43,4 @@ public class TaskSecurityService {
         return false;
     }
 
-//    public boolean hasRoleInTask(Long taskId, String roleName, Long userId) {
-//        if ("ROLE_AUTHOR".equals(roleName)) {
-//            checkAuthorRole(taskId, userId); // проверяем автора
-//            return true;
-//        } else if ("ROLE_EXECUTOR".equals(roleName)) {
-//            checkExecutorRole(taskId, userId); // проверяем исполнителя
-//            return true;
-//        }
-//        return false;
-//    }
 }

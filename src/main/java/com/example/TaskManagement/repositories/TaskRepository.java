@@ -18,10 +18,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query(value = "SELECT t.* " +
             "FROM tasks t " +
             "WHERE t.executor_id =  :id", nativeQuery = true)
-    Page<Task> findAllWithExecutor(@Param("id") Long id,Pageable pageable);
+    Page<Task> findAllWithExecutor(@Param("id") Long id, Pageable pageable);
 
-//    @Query(value = "SELECT c.* " +
-//            "FROM comments c " +
-//            "WHERE c.task_id = :id", nativeQuery = true)
-//    Page<Comment> findAllCommentsWithTask(@Param("id") Long id);
 }

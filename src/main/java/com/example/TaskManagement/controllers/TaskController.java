@@ -7,11 +7,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Collection;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -33,32 +35,32 @@ public class TaskController {
 
     @Operation(summary = "getting all tasks of the author")
     @GetMapping("/users/{author}/allTasksOfAuthor")
-    public ResponseEntity<Page<TaskResponseDTO>> getAllTasksAuthor(
+    public ResponseEntity<Collection<TaskResponseDTO>> getAllTasksAuthor(
             @PathVariable String author,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
         log.info("Fetching tasks for author: " + author + ", page: " + page + ", size: " + size);
-        Page<TaskResponseDTO> tasksPage = taskService.getAllTasksAuthor(author, page, size);
+        List<TaskResponseDTO> tasksPage = taskService.getAllTasksAuthor(author, page, size);
         return ResponseEntity.ok(tasksPage);
     }
 
     @Operation(summary = "getting all tasks of the executor")
     @GetMapping("/users/{executor}/allTasksOfExecutor")
-    public ResponseEntity<Page<TaskResponseDTO>> getAllTasksExecutor(
+    public ResponseEntity<Collection<TaskResponseDTO>> getAllTasksExecutor(
             @PathVariable String executor,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
         log.info("Fetching tasks for author: " + executor + ", page: " + page + ", size: " + size);
-        Page<TaskResponseDTO> tasksPage = taskService.getAllTasksExecutor(executor, page, size);
+        List<TaskResponseDTO> tasksPage = taskService.getAllTasksExecutor(executor, page, size);
         return ResponseEntity.ok(tasksPage);
     }
 
     @Operation(summary = "create new task")
     @PostMapping("/tasks")
     public ResponseEntity<Void> createTask(@RequestBody TaskRequestDTO taskRequestDto) {
-        log.info("Creating task" );
+        log.info("Creating task");
         taskService.create(taskRequestDto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -66,10 +68,9 @@ public class TaskController {
     @Operation(summary = "update task by ID")
     @PreAuthorize("@taskSecurityService.checkAuthorRole(#taskId, authentication.name)")
     @PutMapping("/tasks/{taskId}")
-    public ResponseEntity<Void> updateTask(@PathVariable Long taskId,@RequestBody TaskRequestDTO taskRequestDto) {
+    public ResponseEntity<Void> updateTask(@PathVariable Long taskId, @RequestBody TaskRequestDTO taskRequestDto) {
         log.info("Updating task");
-//        taskRequestDto.setId(taskId);
-        taskService.update(taskRequestDto,taskId);
+        taskService.update(taskRequestDto, taskId);
         return ResponseEntity.ok().build();
     }
 
@@ -88,7 +89,7 @@ public class TaskController {
     @PatchMapping("/tasks/{taskId}/status/completed")
     public ResponseEntity<Void> updateStatusCompleted(@PathVariable Long taskId) {
         log.info("Updating task status to COMPLETED for task with id {}", taskId);
-       taskService.patchStatusTaskCompleted(taskId);
+        taskService.patchStatusTaskCompleted(taskId);
         return ResponseEntity.ok().build();
     }
 
@@ -98,7 +99,7 @@ public class TaskController {
     @PatchMapping("/tasks/{taskId}/status/in-process")
     public ResponseEntity<Void> updateStatusInProcess(@PathVariable Long taskId) {
         log.info("Updating task status to IN_PROCESS for task with id {}", taskId);
-       taskService.patchStatusTaskInProgress(taskId);
+        taskService.patchStatusTaskInProgress(taskId);
         return ResponseEntity.ok().build();
     }
 
@@ -107,7 +108,7 @@ public class TaskController {
     @PatchMapping("/tasks/{taskId}/priority/low")
     public ResponseEntity<Void> updatePriorityMedium(@PathVariable Long taskId) {
         log.info("Updating task priority to LOW for task with id {}", taskId);
-       taskService.patchPriorityTaskLow(taskId);
+        taskService.patchPriorityTaskLow(taskId);
         return ResponseEntity.ok().build();
     }
 

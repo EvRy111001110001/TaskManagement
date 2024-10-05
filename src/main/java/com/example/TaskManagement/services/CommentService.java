@@ -1,6 +1,5 @@
 package com.example.TaskManagement.services;
 
-
 import com.example.TaskManagement.entity.Comment;
 import com.example.TaskManagement.entity.Task;
 import com.example.TaskManagement.entity.User;
@@ -26,19 +25,11 @@ public class CommentService {
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
 
-    public CommentResponseDTO getById(Long id){
+    public CommentResponseDTO getById(Long id) {
         Comment comment = commentRepository.findById(id)
                 .orElseThrow(() -> new CommentNotFoundException(id));
         return toDto(comment);
     }
-
-//    public Collection<CommentDTO> getAll() {
-//        log.info("Get all comments");
-//        return commentRepository.findAll()
-//                .stream()
-//                .map(this::toDto)
-//                .collect(Collectors.toList());
-//    }
 
     public List<CommentResponseDTO> listComment(Long taskId) {
         log.info("Get all comments task " + taskId);
@@ -51,17 +42,17 @@ public class CommentService {
     }
 
 
-    public void create(CommentRequestDTO commentRequestDTO,Long taskId) {
+    public void create(CommentRequestDTO commentRequestDTO, Long taskId) {
         log.info("Create comment by author");
         User user = userRepository.findByUsername(commentRequestDTO.getAuthorName())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        Comment comment = toEntity(commentRequestDTO,taskId);
+        Comment comment = toEntity(commentRequestDTO, taskId);
         commentRepository.save(comment);
     }
 
-    public void update(CommentRequestDTO commentDto,Long taskId) {
+    public void update(CommentRequestDTO commentDto, Long taskId) {
         log.info("Update comment");
-        Comment comment = toEntity(commentDto,taskId);
+        Comment comment = toEntity(commentDto, taskId);
         commentRepository.save(comment);
     }
 
@@ -71,10 +62,15 @@ public class CommentService {
     }
 
     public CommentResponseDTO toDto(Comment comment) {
-        return modelMapper.map(comment, CommentResponseDTO.class);
+        CommentResponseDTO commentResponseDTO = modelMapper.map(comment, CommentResponseDTO.class);
+        Task task = taskRepository.findById(comment.getTask().getId())
+                .orElseThrow(() -> new TaskNotFoundException(comment.getTask().getId()));
+        commentResponseDTO.setTask(task.getTitle());
+        commentResponseDTO.setAuthorName(comment.getAuthor().getUsername());
+        return commentResponseDTO;
     }
 
-    public Comment toEntity(CommentRequestDTO commentRequestDTO,Long taskId) {
+    public Comment toEntity(CommentRequestDTO commentRequestDTO, Long taskId) {
         Comment comment = modelMapper.map(commentRequestDTO, Comment.class);
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new TaskNotFoundException(taskId));

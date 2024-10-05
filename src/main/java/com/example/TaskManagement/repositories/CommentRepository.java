@@ -13,6 +13,4 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
-//    @Query("SELECT c FROM Comment c WHERE c.task.id = :taskId ORDER BY c.createdDate DESC")
-//    List<Comment> findCommentsByTaskId(@Param("taskId") Long taskId, Pageable pageable);
 }

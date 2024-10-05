@@ -1,10 +1,12 @@
 package com.example.TaskManagement.controllers;
 
+import com.example.TaskManagement.entity.User;
 import com.example.TaskManagement.model.JwtAuthenticationResponse;
 import com.example.TaskManagement.model.SignInRequest;
 import com.example.TaskManagement.model.SignUpRequest;
 
 import com.example.TaskManagement.services.AuthorizationService;
+import com.example.TaskManagement.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -24,14 +26,8 @@ import java.util.Map;
 @Tag(name = "authentication and authorization")
 public class AuthController {
     private final AuthorizationService authenticationService;
+    private final UserService userService;
 
-//    @Operation(summary = "user registration")
-//    @PostMapping("/sign-up")
-//    public ResponseEntity<String> signUp(@RequestBody @Valid SignUpRequest request) {
-//        JwtAuthenticationResponse jwtResponse = authenticationService.signUp(request);
-//
-//        return ResponseEntity.ok("User registered successfully");
-//    }
     @Operation(summary = "user registration")
     @PostMapping("/sign-up")
     public ResponseEntity<Map<String, String>> signUp(@RequestBody @Valid SignUpRequest request) {
@@ -39,7 +35,7 @@ public class AuthController {
 
         Map<String, String> response = new HashMap<>();
         response.put("message", "User registered successfully");
-        response.put("token", jwtResponse.getToken()); // предполагается, что jwtResponse имеет getToken()
+        response.put("token", jwtResponse.getToken());
 
         return ResponseEntity.ok(response);
     }
@@ -48,11 +44,10 @@ public class AuthController {
     @PostMapping("/sign-in")
     public ResponseEntity<Map<String, String>> signIn(@RequestBody @Valid SignInRequest request) {
         JwtAuthenticationResponse jwtResponse = authenticationService.signIn(request);
-
-        //return ResponseEntity.ok("Hello " + request.getUsername() + " !");
+        User user = userService.getByEmail(request.getEmail());
         Map<String, String> response = new HashMap<>();
-        response.put("message", "Hello " + request.getUsername() + " !");
-        response.put("token", jwtResponse.getToken()); // предполагается, что jwtResponse имеет getToken()
+        response.put("message", "Hello " + user.getUsername() + " !");
+        response.put("token", jwtResponse.getToken());
 
         return ResponseEntity.ok(response);
     }
