@@ -5,6 +5,7 @@ import com.example.TaskManagement.model.CommentResponseDTO;
 import com.example.TaskManagement.services.CommentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -39,7 +40,7 @@ public class CommentController {
 
     @Operation(summary = "create new comment")
     @PostMapping
-    public ResponseEntity<Void> createComment(@PathVariable Long taskId, @RequestBody CommentRequestDTO commentRequestDTO) {
+    public ResponseEntity<Void> createComment(@PathVariable Long taskId, @Valid @RequestBody CommentRequestDTO commentRequestDTO) {
         log.info("Creating comment by author");
         commentService.create(commentRequestDTO, taskId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -48,7 +49,7 @@ public class CommentController {
     @Operation(summary = "change comment by ID")
     @PutMapping("/{commentId}")
     public ResponseEntity<Void> updateComment(@PathVariable Long taskId, @PathVariable Long commentId,
-                                              @RequestBody CommentRequestDTO commentDto) {
+                                              @Valid @RequestBody CommentRequestDTO commentDto) {
         log.info("Updating comment with id");
         commentService.update(commentDto, taskId);
         return ResponseEntity.ok().build();

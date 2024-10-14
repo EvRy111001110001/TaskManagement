@@ -14,7 +14,6 @@ import java.util.Set;
 @Setter
 @Table(name = "tasks")
 public class Task {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -43,6 +42,5 @@ public class Task {
     private User executor;
 
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-
     private List<Comment> comments = new ArrayList<>();
 }

@@ -1,21 +1,21 @@
 package com.example.TaskManagement.services;
 
 import com.example.TaskManagement.entity.*;
+import com.example.TaskManagement.model.CommentRequestDTO;
 import com.example.TaskManagement.model.TaskRequestDTO;
 import com.example.TaskManagement.model.TaskResponseDTO;
-import com.example.TaskManagement.repositories.CommentRepository;
 import com.example.TaskManagement.repositories.TaskRepository;
 import com.example.TaskManagement.repositories.UserRepository;
 import com.example.TaskManagement.repositories.RedisTaskRoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -24,10 +24,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class TaskService {
-    private final CommentRepository commentRepository;
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
-    private final ModelMapper modelMapper;
     private final RedisTaskRoleRepository redisTaskRoleRepository;
 
     public TaskResponseDTO getById(Long id) {
@@ -41,9 +39,7 @@ public class TaskService {
         log.info("Create task");
         User author = userRepository.findByUsername(taskRequestDto.getAuthorName())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        Task task = toEntity(taskRequestDto);
-        task.setAuthor(author); //явное указание автора
-        setDefaultValue(task);
+        Task task = toEntity(taskRequestDto,author);
 
         Task savedTask = taskRepository.save(task);
 
@@ -59,9 +55,11 @@ public class TaskService {
 
     public void update(TaskRequestDTO taskRequestDTO, Long taskId) {
         log.info("Update task");
+        User author = userRepository.findByUsername(taskRequestDTO.getAuthorName())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
-        toEntity(taskRequestDTO);
+        toEntity(taskRequestDTO,author);
 
         taskRepository.save(task);
     }
@@ -119,14 +117,7 @@ public class TaskService {
     }
 
     public TaskResponseDTO toDto(Task task) {
-        TaskResponseDTO taskResponseDto = modelMapper.map(task, TaskResponseDTO.class);
-
-        if (task.getAuthor() != null) {
-            String authorName = task.getAuthor().getUsername();
-            taskResponseDto.setAuthorName(authorName);
-        } else {
-            taskResponseDto.setAuthorName("Unknown Author");
-        }
+        TaskResponseDTO taskResponseDto = new TaskResponseDTO();
 
         if (task.getExecutor() != null) {
             Optional<User> executor = userRepository.findUserById(task.getExecutor().getId());
@@ -138,11 +129,23 @@ public class TaskService {
         } else {
             taskResponseDto.setExecutorName("You have not assigned a task executor");
         }
+        taskResponseDto.setAuthorName(task.getAuthor().getUsername());
+        taskResponseDto.setId(task.getId());
+        taskResponseDto.setText(task.getText());
+        taskResponseDto.setTitle(task.getTitle());
+        taskResponseDto.setPriority(task.getPriority().toString());
+        taskResponseDto.setStatus(task.getStatus().toString());
+        taskResponseDto.setComments(getAllComment(task.getAuthor().getId()));
         return taskResponseDto;
     }
 
-    public Task toEntity(TaskRequestDTO taskRequestDto) {
-        return modelMapper.map(taskRequestDto, Task.class);
+    public Task toEntity(TaskRequestDTO taskRequestDto,User user) {
+        Task task = new Task();
+        task.setAuthor(user);
+        task.setTitle(taskRequestDto.getTitle());
+        task.setText(taskRequestDto.getText());
+        setDefaultValue(task);
+        return task;
     }
 
     public List<TaskResponseDTO> getAllTasksAuthor(String username, int page, int size) {
@@ -169,5 +172,16 @@ public class TaskService {
                 .stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
+    }
+    public List<CommentRequestDTO> getAllComment(Long taskId){
+        List<Object[]> results = taskRepository.findAllComment(taskId);
+        List<CommentRequestDTO> comments = new ArrayList<>();
+        for (Object[] row : results) {
+            CommentRequestDTO dto = new CommentRequestDTO();
+            dto.setText((String) row[0]);
+            dto.setAuthorName((String) row[1]);
+            comments.add(dto);
+        }
+        return comments;
     }
 }

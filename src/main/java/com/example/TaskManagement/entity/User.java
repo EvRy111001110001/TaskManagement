@@ -16,7 +16,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "users")
-public class User implements UserDetails {
+public class User implements UserDetails { // no extends AbstractEntity
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

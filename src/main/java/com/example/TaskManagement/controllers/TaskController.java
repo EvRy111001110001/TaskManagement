@@ -5,6 +5,7 @@ import com.example.TaskManagement.model.TaskResponseDTO;
 import com.example.TaskManagement.services.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -59,7 +60,7 @@ public class TaskController {
 
     @Operation(summary = "create new task")
     @PostMapping("/tasks")
-    public ResponseEntity<Void> createTask(@RequestBody TaskRequestDTO taskRequestDto) {
+    public ResponseEntity<Void> createTask(@Valid  @RequestBody TaskRequestDTO taskRequestDto) {
         log.info("Creating task");
         taskService.create(taskRequestDto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -68,7 +69,7 @@ public class TaskController {
     @Operation(summary = "update task by ID")
     @PreAuthorize("@taskSecurityService.checkAuthorRole(#taskId, authentication.name)")
     @PutMapping("/tasks/{taskId}")
-    public ResponseEntity<Void> updateTask(@PathVariable Long taskId, @RequestBody TaskRequestDTO taskRequestDto) {
+    public ResponseEntity<Void> updateTask(@PathVariable Long taskId,@Valid @RequestBody TaskRequestDTO taskRequestDto) {
         log.info("Updating task");
         taskService.update(taskRequestDto, taskId);
         return ResponseEntity.ok().build();

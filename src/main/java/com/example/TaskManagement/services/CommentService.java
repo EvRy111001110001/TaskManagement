@@ -10,7 +10,6 @@ import com.example.TaskManagement.repositories.TaskRepository;
 import com.example.TaskManagement.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +22,6 @@ public class CommentService {
     private final TaskRepository taskRepository;
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
-    private final ModelMapper modelMapper;
 
     public CommentResponseDTO getById(Long id) {
         Comment comment = commentRepository.findById(id)
@@ -40,7 +38,6 @@ public class CommentService {
                 .map(this::toDto)
                 .toList();
     }
-
 
     public void create(CommentRequestDTO commentRequestDTO, Long taskId) {
         log.info("Create comment by author");
@@ -62,23 +59,24 @@ public class CommentService {
     }
 
     public CommentResponseDTO toDto(Comment comment) {
-        CommentResponseDTO commentResponseDTO = modelMapper.map(comment, CommentResponseDTO.class);
+        CommentResponseDTO commentResponseDTO = new CommentResponseDTO();
         Task task = taskRepository.findById(comment.getTask().getId())
                 .orElseThrow(() -> new TaskNotFoundException(comment.getTask().getId()));
         commentResponseDTO.setTask(task.getTitle());
+        commentResponseDTO.setText(comment.getText());
         commentResponseDTO.setAuthorName(comment.getAuthor().getUsername());
         return commentResponseDTO;
     }
 
     public Comment toEntity(CommentRequestDTO commentRequestDTO, Long taskId) {
-        Comment comment = modelMapper.map(commentRequestDTO, Comment.class);
+        Comment comment = new Comment();
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
         User author = userRepository.findByUsername(commentRequestDTO.getAuthorName())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
         comment.setTask(task);
+        comment.setText(commentRequestDTO.getText());
         comment.setAuthor(author);
         return comment;
-
     }
 }
