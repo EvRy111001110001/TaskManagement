@@ -3,6 +3,8 @@ package com.example.TaskManagement.services;
 import com.example.TaskManagement.entity.Comment;
 import com.example.TaskManagement.entity.Task;
 import com.example.TaskManagement.entity.User;
+import com.example.TaskManagement.exception.CommentNotFoundException;
+import com.example.TaskManagement.exception.TaskNotFoundException;
 import com.example.TaskManagement.model.CommentRequestDTO;
 import com.example.TaskManagement.model.CommentResponseDTO;
 import com.example.TaskManagement.repositories.CommentRepository;

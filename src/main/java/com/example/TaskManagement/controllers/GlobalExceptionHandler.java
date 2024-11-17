@@ -1,8 +1,8 @@
 package com.example.TaskManagement.controllers;
 
-import com.example.TaskManagement.services.CommentNotFoundException;
-import com.example.TaskManagement.services.DuplicateException;
-import com.example.TaskManagement.services.TaskNotFoundException;
+import com.example.TaskManagement.exception.CommentNotFoundException;
+import com.example.TaskManagement.exception.DuplicateException;
+import com.example.TaskManagement.exception.TaskNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

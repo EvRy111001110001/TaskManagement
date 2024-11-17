@@ -1,6 +1,7 @@
 package com.example.TaskManagement.services;
 
 import com.example.TaskManagement.entity.User;
+import com.example.TaskManagement.exception.DuplicateException;
 import com.example.TaskManagement.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;

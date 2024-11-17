@@ -1,6 +1,7 @@
 package com.example.TaskManagement.services;
 
 import com.example.TaskManagement.entity.*;
+import com.example.TaskManagement.exception.TaskNotFoundException;
 import com.example.TaskManagement.model.CommentRequestDTO;
 import com.example.TaskManagement.model.TaskRequestDTO;
 import com.example.TaskManagement.model.TaskResponseDTO;
@@ -67,6 +68,32 @@ public class TaskService {
     public void deleteById(Long id) {
         log.info("Delete by task id " + id);
         taskRepository.deleteById(id);
+    }
+
+    public List<TaskResponseDTO> getAllTasksAuthor(String username, int page, int size) {
+        log.info("Get all tasks for author");
+        Pageable pageable = PageRequest.of(page, size);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        Page<Task> taskPage = taskRepository.findAllWithAuthor(user.getId(), pageable);
+
+        return taskPage.getContent()
+                .stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<TaskResponseDTO> getAllTasksExecutor(String username, int page, int size) {
+        log.info("Get all tasks for executor");
+        Pageable pageable = PageRequest.of(page, size);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        Page<Task> taskPage = taskRepository.findAllWithExecutor(user.getId(), pageable);
+
+        return taskPage.getContent()
+                .stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
     public void setDefaultValue(Task task) {
@@ -148,31 +175,7 @@ public class TaskService {
         return task;
     }
 
-    public List<TaskResponseDTO> getAllTasksAuthor(String username, int page, int size) {
-        log.info("Get all tasks for author");
-        Pageable pageable = PageRequest.of(page, size);
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        Page<Task> taskPage = taskRepository.findAllWithAuthor(user.getId(), pageable);
 
-        return taskPage.getContent()
-                .stream()
-                .map(this::toDto)
-                .collect(Collectors.toList());
-    }
-
-    public List<TaskResponseDTO> getAllTasksExecutor(String username, int page, int size) {
-        log.info("Get all tasks for author");
-        Pageable pageable = PageRequest.of(page, size);
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        Page<Task> taskPage = taskRepository.findAllWithExecutor(user.getId(), pageable);
-
-        return taskPage.getContent()
-                .stream()
-                .map(this::toDto)
-                .collect(Collectors.toList());
-    }
     public List<CommentRequestDTO> getAllComment(Long taskId){
         List<Object[]> results = taskRepository.findAllComment(taskId);
         List<CommentRequestDTO> comments = new ArrayList<>();
@@ -184,4 +187,5 @@ public class TaskService {
         }
         return comments;
     }
+
 }

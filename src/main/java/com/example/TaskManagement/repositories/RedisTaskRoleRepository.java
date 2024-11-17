@@ -1,7 +1,7 @@
 package com.example.TaskManagement.repositories;
 
 import com.example.TaskManagement.entity.RedisTask;
-import com.example.TaskManagement.services.TaskNotFoundException;
+import com.example.TaskManagement.exception.TaskNotFoundException;
 import org.springframework.data.repository.CrudRepository;
 
 import java.util.Optional;
