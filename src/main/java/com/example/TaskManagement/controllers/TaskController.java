@@ -16,6 +16,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * Controller for managing tasks in the application. This class handles requests related to tasks,
+ * including retrieving, creating, updating, and deleting tasks, as well as modifying task statuses
+ * and priorities. It also enforces authorization using security annotations.
+ */
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
@@ -25,6 +30,12 @@ public class TaskController {
 
     private final TaskService taskService;
 
+    /**
+     * Retrieves a task by its ID.
+     *
+     * @param taskId the ID of the task to be retrieved
+     * @return a {@link ResponseEntity} containing the task details if found, or a NOT_FOUND status if the task does not exist
+     */
     @Operation(summary = "getting task by ID")
     @PreAuthorize("@taskSecurityService.checkAuthorRole(#taskId, authentication.name)")
     @GetMapping("/tasks/{taskId}")
@@ -34,6 +45,14 @@ public class TaskController {
         return ResponseEntity.ok(taskResponseDTO);
     }
 
+    /**
+     * Retrieves all tasks assigned to a specific author, with pagination support.
+     *
+     * @param author the username of the author whose tasks are to be retrieved
+     * @param page the page number to retrieve (default is 0)
+     * @param size the number of tasks per page (default is 10)
+     * @return a {@link ResponseEntity} containing a list of task DTOs
+     */
     @Operation(summary = "getting all tasks of the author")
     @GetMapping("/users/{author}/allTasksOfAuthor")
     public ResponseEntity<Collection<TaskResponseDTO>> getAllTasksAuthor(
@@ -46,6 +65,14 @@ public class TaskController {
         return ResponseEntity.ok(tasksPage);
     }
 
+    /**
+     * Retrieves all tasks assigned to a specific executor, with pagination support.
+     *
+     * @param executor the username of the executor whose tasks are to be retrieved
+     * @param page the page number to retrieve (default is 0)
+     * @param size the number of tasks per page (default is 10)
+     * @return a {@link ResponseEntity} containing a list of task DTOs
+     */
     @Operation(summary = "getting all tasks of the executor")
     @GetMapping("/users/{executor}/allTasksOfExecutor")
     public ResponseEntity<Collection<TaskResponseDTO>> getAllTasksExecutor(
@@ -58,6 +85,12 @@ public class TaskController {
         return ResponseEntity.ok(tasksPage);
     }
 
+    /**
+     * Creates a new task.
+     *
+     * @param taskRequestDto the task data to be created
+     * @return a {@link ResponseEntity} indicating the result of the operation
+     */
     @Operation(summary = "create new task")
     @PostMapping("/tasks")
     public ResponseEntity<Void> createTask(@Valid  @RequestBody TaskRequestDTO taskRequestDto) {
@@ -66,6 +99,13 @@ public class TaskController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
+    /**
+     * Updates an existing task by its ID.
+     *
+     * @param taskId the ID of the task to be updated
+     * @param taskRequestDto the updated task data
+     * @return a {@link ResponseEntity} indicating the result of the operation
+     */
     @Operation(summary = "update task by ID")
     @PreAuthorize("@taskSecurityService.checkAuthorRole(#taskId, authentication.name)")
     @PutMapping("/tasks/{taskId}")
@@ -75,6 +115,12 @@ public class TaskController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * Deletes a task by its ID.
+     *
+     * @param taskId the ID of the task to be deleted
+     * @return a {@link ResponseEntity} indicating the result of the operation
+     */
     @Operation(summary = "delete task by ID")
     @PreAuthorize("@taskSecurityService.checkAuthorRole(#taskId, authentication.name)")
     @DeleteMapping("/tasks/{taskId}")
@@ -84,6 +130,12 @@ public class TaskController {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
+    /**
+     * Updates the status of a task to "COMPLETED".
+     *
+     * @param taskId the ID of the task to update
+     * @return a {@link ResponseEntity} indicating the result of the operation
+     */
     @Operation(summary = "update task status - completed")
     @PreAuthorize("@taskSecurityService.checkExecutorRole(#taskId, authentication.name) " +
             "|| @taskSecurityService.checkAuthorRole(#taskId, authentication.name)")
@@ -94,6 +146,12 @@ public class TaskController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * Updates the status of a task to "IN_PROCESS".
+     *
+     * @param taskId the ID of the task to update
+     * @return a {@link ResponseEntity} indicating the result of the operation
+     */
     @Operation(summary = "update task status - in progress")
     @PreAuthorize("@taskSecurityService.checkExecutorRole(#taskId, authentication.name) " +
             "|| @taskSecurityService.checkAuthorRole(#taskId, authentication.name)")
@@ -104,6 +162,12 @@ public class TaskController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * Updates the priority of a task to "LOW".
+     *
+     * @param taskId the ID of the task to update
+     * @return a {@link ResponseEntity} indicating the result of the operation
+     */
     @Operation(summary = "update task priority - low")
     @PreAuthorize("@taskSecurityService.checkAuthorRole(#taskId, authentication.name)")
     @PatchMapping("/tasks/{taskId}/priority/low")
@@ -113,6 +177,12 @@ public class TaskController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * Updates the priority of a task to "HIGH".
+     *
+     * @param taskId the ID of the task to update
+     * @return a {@link ResponseEntity} indicating the result of the operation
+     */
     @Operation(summary = "update task priority - high")
     @PreAuthorize("@taskSecurityService.checkAuthorRole(#taskId, authentication.name)")
     @PatchMapping("/tasks/{taskId}/priority/high")
@@ -122,6 +192,13 @@ public class TaskController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * Updates the executor for a task.
+     *
+     * @param taskId the ID of the task to update
+     * @param executorName the new executor's name
+     * @return a {@link ResponseEntity} indicating the result of the operation
+     */
     @Operation(summary = "update task executor")
     @PreAuthorize("@taskSecurityService.checkAuthorRole(#taskId, authentication.name)")
     @PatchMapping("/tasks/{taskId}/{executorName}")

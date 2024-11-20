@@ -9,11 +9,17 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
+/**
+ * Entity class representing a comment in the system.
+ * Each comment is associated with a task and an author (user).
+ * The class contains information about the comment text, timestamps, and versioning.
+ */
 @Entity
 @Getter
 @Setter
 @Table(name = "comments")
 public class Comment {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

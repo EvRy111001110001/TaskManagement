@@ -12,5 +12,10 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Repository interface for managing {@link Comment} entities.
+ * Provides CRUD operations and query methods for {@link Comment} objects.
+ * Extends {@link JpaRepository} for basic persistence operations.
+ */
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 }

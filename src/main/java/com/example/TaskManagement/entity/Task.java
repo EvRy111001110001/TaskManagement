@@ -12,6 +12,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Represents a task entity in the system.
+ * This class defines the attributes and relationships of a task, including its title, description,
+ * status, priority, author, executor, and related comments.
+ */
 @Entity
 @Getter
 @Setter

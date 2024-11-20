@@ -4,7 +4,7 @@ package com.example.TaskManagement;
 import com.example.TaskManagement.entity.Task;
 import com.example.TaskManagement.entity.User;
 import com.example.TaskManagement.model.TaskRequestDTO;
-import com.example.TaskManagement.repositories.RedisTaskRoleRepository;
+import com.example.TaskManagement.securityRedis.RedisTaskRoleRepository;
 import com.example.TaskManagement.repositories.TaskRepository;
 import com.example.TaskManagement.repositories.UserRepository;
 import com.example.TaskManagement.services.TaskService;

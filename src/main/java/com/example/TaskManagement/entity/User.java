@@ -9,6 +9,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
+/**
+ * Represents a user in the system.
+ * This class implements Spring Security's {@link UserDetails} interface, providing details about the user
+ * such as username, email, and password, as well as tasks that the user has authored or executed.
+ */
 @Entity
 @Getter
 @Setter
@@ -16,7 +21,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "users")
-public class User implements UserDetails { // no extends AbstractEntity
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
