@@ -2,7 +2,7 @@ package com.example.TaskManagement.services;
 
 import com.example.TaskManagement.entity.*;
 import com.example.TaskManagement.exception.TaskNotFoundException;
-import com.example.TaskManagement.model.CommentRequestDTO;
+import com.example.TaskManagement.mappers.TaskMapper;
 import com.example.TaskManagement.model.TaskRequestDTO;
 import com.example.TaskManagement.model.TaskResponseDTO;
 import com.example.TaskManagement.repositories.TaskRepository;
@@ -16,9 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -34,6 +32,7 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
     private final RedisTaskRoleRepository redisTaskRoleRepository;
+    private final TaskMapper taskMapper;
 
     /**
      * Retrieves a task by its ID.
@@ -46,7 +45,7 @@ public class TaskService {
         log.info("Get by task id " + id);
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new TaskNotFoundException(id));
-        return toDto(task);
+        return taskMapper.toDTO(task);
     }
 
     /**
@@ -59,7 +58,8 @@ public class TaskService {
         log.info("Create task");
         User author = userRepository.findByUsername(taskRequestDto.getAuthorName())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        Task task = toEntity(taskRequestDto,author);
+        Task task = new Task();
+                taskMapper.toEntity(task,taskRequestDto,author);
 
         Task savedTask = taskRepository.save(task);
 
@@ -87,7 +87,7 @@ public class TaskService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
-        toEntity(taskRequestDTO,author);
+        taskMapper.toEntity(task,taskRequestDTO,author);
 
         taskRepository.save(task);
     }
@@ -120,7 +120,7 @@ public class TaskService {
 
         return taskPage.getContent()
                 .stream()
-                .map(this::toDto)
+                .map(taskMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
@@ -142,22 +142,8 @@ public class TaskService {
 
         return taskPage.getContent()
                 .stream()
-                .map(this::toDto)
+                .map(taskMapper::toDTO)
                 .collect(Collectors.toList());
-    }
-
-    /**
-     * Sets default values for a task if they are not already set.
-     *
-     * @param task The task to set default values for.
-     */
-    public void setDefaultValue(Task task) {
-        if (task.getStatus() == null) {
-            task.setStatus(StatusTask.WAITING);
-        }
-        if (task.getPriority() == null) {
-            task.setPriority(PriorityTask.MEDIUM);
-        }
     }
 
     /**
@@ -228,57 +214,6 @@ public class TaskService {
         task.setExecutor(executor);
         taskRepository.save(task);
         redisTaskRoleRepository.updateExecutor(taskId, executor.getId());
-    }
-
-    public TaskResponseDTO toDto(Task task) {
-        TaskResponseDTO taskResponseDto = new TaskResponseDTO();
-
-        if (task.getExecutor() != null) {
-            Optional<User> executor = userRepository.findUserById(task.getExecutor().getId());
-            if (executor.isPresent()) {
-                taskResponseDto.setExecutorName(task.getExecutor().getUsername());
-            } else {
-                taskResponseDto.setExecutorName("Executor not found");
-            }
-        } else {
-            taskResponseDto.setExecutorName("You have not assigned a task executor");
-        }
-        taskResponseDto.setAuthorName(task.getAuthor().getUsername());
-        taskResponseDto.setId(task.getId());
-        taskResponseDto.setText(task.getText());
-        taskResponseDto.setTitle(task.getTitle());
-        taskResponseDto.setPriority(task.getPriority().toString());
-        taskResponseDto.setStatus(task.getStatus().toString());
-        taskResponseDto.setComments(getAllComment(task.getAuthor().getId()));
-        return taskResponseDto;
-    }
-
-    public Task toEntity(TaskRequestDTO taskRequestDto,User user) {
-        Task task = new Task();
-        task.setAuthor(user);
-        task.setTitle(taskRequestDto.getTitle());
-        task.setText(taskRequestDto.getText());
-        setDefaultValue(task);
-        return task;
-    }
-
-
-    /**
-     * Retrieves all comments related to a task from the repository.
-     *
-     * @param taskId The ID of the task whose comments are to be retrieved.
-     * @return A list of CommentRequestDTO objects representing the comments.
-     */
-    public List<CommentRequestDTO> getAllComment(Long taskId){
-        List<Object[]> results = taskRepository.findAllComment(taskId);
-        List<CommentRequestDTO> comments = new ArrayList<>();
-        for (Object[] row : results) {
-            CommentRequestDTO dto = new CommentRequestDTO();
-            dto.setText((String) row[0]);
-            dto.setAuthorName((String) row[1]);
-            comments.add(dto);
-        }
-        return comments;
     }
 
 }

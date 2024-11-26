@@ -26,19 +26,9 @@ import java.util.List;
 @Slf4j
 @Service
 public class CommentService {
-    /**
-     * Repository for managing tasks.
-     */
+
     private final TaskRepository taskRepository;
-
-    /**
-     * Repository for managing users.
-     */
     private final CommentRepository commentRepository;
-
-    /**
-     * Repository for managing users.
-     */
     private final UserRepository userRepository;
 
     /**

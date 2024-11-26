@@ -1,6 +1,7 @@
 package com.example.TaskManagement.services;
 
 import com.example.TaskManagement.entity.User;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import static io.jsonwebtoken.Jwts.builder;
+
 
 /**
  * Service class for generating, validating, and extracting information from JSON Web Tokens (JWTs).
