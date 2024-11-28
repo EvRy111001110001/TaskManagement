@@ -5,6 +5,7 @@ import com.example.TaskManagement.entity.Task;
 import com.example.TaskManagement.entity.User;
 import com.example.TaskManagement.exception.CommentNotFoundException;
 import com.example.TaskManagement.exception.TaskNotFoundException;
+import com.example.TaskManagement.mappers.CommentMapper;
 import com.example.TaskManagement.model.CommentRequestDTO;
 import com.example.TaskManagement.model.CommentResponseDTO;
 import com.example.TaskManagement.repositories.CommentRepository;
@@ -30,6 +31,7 @@ public class CommentService {
     private final TaskRepository taskRepository;
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
+    private final CommentMapper commentMapper;
 
     /**
      * Retrieves a comment by its ID and converts it to a response DTO.
@@ -41,7 +43,7 @@ public class CommentService {
     public CommentResponseDTO getById(Long id) {
         Comment comment = commentRepository.findById(id)
                 .orElseThrow(() -> new CommentNotFoundException(id));
-        return toDto(comment);
+        return commentMapper.toDTO(comment);
     }
 
     /**
@@ -57,7 +59,7 @@ public class CommentService {
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
         return commentRepository.findAll()
                 .stream().filter(comment -> comment.getTask().equals(task))
-                .map(this::toDto)
+                .map(commentMapper::toDTO)
                 .toList();
     }
 
@@ -72,19 +74,23 @@ public class CommentService {
         log.info("Create comment by author");
         User user = userRepository.findByUsername(commentRequestDTO.getAuthorName())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        Comment comment = toEntity(commentRequestDTO, taskId);
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new TaskNotFoundException(taskId));
+        Comment comment = commentMapper.toEntity(commentRequestDTO,task);
         commentRepository.save(comment);
     }
 
     /**
      * Updates an existing comment for a specific task based on the provided DTO.
      *
-     * @param commentDto The data transfer object containing updated comment details.
+     * @param commentRequestDTO The data transfer object containing updated comment details.
      * @param taskId     The ID of the task the comment is associated with.
      */
-    public void update(CommentRequestDTO commentDto, Long taskId) {
+    public void update(CommentRequestDTO commentRequestDTO, Long taskId) {
         log.info("Update comment");
-        Comment comment = toEntity(commentDto, taskId);
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new TaskNotFoundException(taskId));
+        Comment comment = commentMapper.toEntity(commentRequestDTO,task);
         commentRepository.save(comment);
     }
 
@@ -98,41 +104,4 @@ public class CommentService {
         commentRepository.deleteById(id);
     }
 
-    /**
-     * Converts a {@link Comment} entity to a {@link CommentResponseDTO}.
-     *
-     * @param comment The comment entity to convert.
-     * @return A {@link CommentResponseDTO} representing the comment.
-     * @throws TaskNotFoundException if the associated task does not exist.
-     */
-    public CommentResponseDTO toDto(Comment comment) {
-        CommentResponseDTO commentResponseDTO = new CommentResponseDTO();
-        Task task = taskRepository.findById(comment.getTask().getId())
-                .orElseThrow(() -> new TaskNotFoundException(comment.getTask().getId()));
-        commentResponseDTO.setTask(task.getTitle());
-        commentResponseDTO.setText(comment.getText());
-        commentResponseDTO.setAuthorName(comment.getAuthor().getUsername());
-        return commentResponseDTO;
-    }
-
-    /**
-     * Converts a {@link CommentRequestDTO} to a {@link Comment} entity.
-     *
-     * @param commentRequestDTO The DTO containing comment details.
-     * @param taskId            The ID of the task the comment is associated with.
-     * @return A {@link Comment} entity populated with the given details.
-     * @throws TaskNotFoundException       if the task with the given ID does not exist.
-     * @throws UsernameNotFoundException   if the author of the comment does not exist.
-     */
-    public Comment toEntity(CommentRequestDTO commentRequestDTO, Long taskId) {
-        Comment comment = new Comment();
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new TaskNotFoundException(taskId));
-        User author = userRepository.findByUsername(commentRequestDTO.getAuthorName())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        comment.setTask(task);
-        comment.setText(commentRequestDTO.getText());
-        comment.setAuthor(author);
-        return comment;
-    }
 }

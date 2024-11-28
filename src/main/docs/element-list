@@ -4,6 +4,7 @@ com.example.TaskManagement.controllers
 com.example.TaskManagement.entity
 com.example.TaskManagement.exception
 com.example.TaskManagement.filter
+com.example.TaskManagement.mappers
 com.example.TaskManagement.model
 com.example.TaskManagement.repositories
 com.example.TaskManagement.securityRedis
